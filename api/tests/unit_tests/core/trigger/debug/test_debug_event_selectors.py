@@ -263,17 +263,21 @@ class TestCreateEventPoller:
     def test_raises_for_unknown_type(self):
         wf = _workflow_with_node(BuiltinNodeTypes.START)
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError) as exc_info:
             create_event_poller(wf, "t1", "u1", "a1", "n1")
+
+        assert str(exc_info.value) == f"unable to create event poller for node type {BuiltinNodeTypes.START}"
 
     def test_raises_when_node_config_missing(self):
         wf = _workflow_with_node(None)
 
         with (
             patch.object(Workflow, "get_node_config_by_id", return_value=None),
-            pytest.raises(ValueError),
+            pytest.raises(ValueError) as exc_info,
         ):
             create_event_poller(wf, "t1", "u1", "a1", "n1")
+
+        assert str(exc_info.value) == "Node data not found for node n1"
 
 
 class TestSelectTriggerDebugEvents:
@@ -297,3 +301,14 @@ class TestSelectTriggerDebugEvents:
             result = select_trigger_debug_events(wf, app_model, "u1", ["n1"])
 
             assert result is None
+
+    def test_raises_when_node_config_missing(self):
+        wf = _workflow_with_node(None)
+
+        with (
+            patch.object(Workflow, "get_node_config_by_id", return_value=None),
+            pytest.raises(ValueError) as exc_info,
+        ):
+            select_trigger_debug_events(wf, _app(), "u1", ["missing-node"])
+
+        assert str(exc_info.value) == "Node data not found for node missing-node"
