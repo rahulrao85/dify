@@ -519,6 +519,9 @@ class ToolTransformService:
             """Process properties recursively"""
             TYPE_MAPPING = {"integer": "number", "float": "number"}
             COMPLEX_TYPES = ["array", "object"]
+            # Only accept standard JSON schema types from remote MCP servers; Dify-internal
+            # types (file, secret-input, ...) and unknown types fall back to string.
+            SUPPORTED_TYPES = {"string", "number", "boolean", "array", "object"}
 
             parameters = []
             for name, prop in props.items():
@@ -526,6 +529,8 @@ class ToolTransformService:
                 prop_type = resolve_property_type(prop)
                 if prop_type in TYPE_MAPPING:
                     prop_type = TYPE_MAPPING[prop_type]
+                if prop_type not in SUPPORTED_TYPES:
+                    prop_type = "string"
                 input_schema = prop if prop_type in COMPLEX_TYPES else None
                 parameters.append(
                     create_parameter(name, current_description, prop_type, name in required, input_schema)
